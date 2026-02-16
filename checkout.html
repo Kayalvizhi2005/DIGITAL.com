@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout - Algo's Collection</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #fafafa;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .product-box {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+      padding: 20px 40px;
+      max-width: 400px;
+      text-align: left;
+    }
+
+    img {
+      width: 200px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    button {
+      display: block;
+      background: #000;
+      color: white;
+      text-align: center;
+      padding: 10px 20px;
+      border-radius: 25px;
+      border: none;
+      font-size: 16px;
+      margin: 15px auto 0;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #d4009f;
+    }
+
+    input[type='number'],
+    textarea {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    textarea {
+      resize: none;
+      height: 80px;
+    }
+
+    p {
+      font-size: 1rem;
+      color: #333;
+    }
+
+    label {
+      font-weight: 500;
+      color: #222;
+    }
+
+    /* 💳 Payment Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      text-align: center;
+      width: 300px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-content h3 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .pay-option {
+      display: block;
+      background: #efefef;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 1rem;
+    }
+
+    .pay-option:hover {
+      background: #d4009f;
+      color: #fff;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Checkout Page</h2>
+
+  <div class="product-box">
+    <img id="productImage" src="" alt="Product Image" />
+    <h3 id="productName"></h3>
+    <p id="productPrice"></p>
+
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" value="1" min="1" />
+
+    <label for="address">Delivery Address:</label>
+    <textarea id="address" placeholder="Enter your full address..."></textarea>
+
+    <p id="totalPrice"></p>
+
+    <!-- Payment Buttons -->
+    <button id="payNowBtn">Proceed to Pay</button>
+    <button id="codBtn">Cash on Delivery (₹50 Shipping)</button>
+    <button id="doneBtn" class="hidden">Done</button>
+  </div>
+
+  <!-- 💳 Payment Popup -->
+  <div class="modal" id="paymentModal">
+    <div class="modal-content">
+      <h3>Select Payment Method</h3>
+      <div class="pay-option" onclick="makePayment('Google Pay')">💳 Google Pay</div>
+      <div class="pay-option" onclick="makePayment('PhonePe')">📱 PhonePe</div>
+      <div class="pay-option" onclick="makePayment('Paytm')">💰 Paytm</div>
+      <div class="pay-option" onclick="makePayment('Card')">💳 Debit / Credit Card</div>
+    </div>
+  </div>
+
+  <script>
+    let totalAmount = 0;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const product = JSON.parse(localStorage.getItem("selectedProduct"));
+      const quantityInput = document.getElementById("quantity");
+      const payNowBtn = document.getElementById("payNowBtn");
+      const codBtn = document.getElementById("codBtn");
+      const doneBtn = document.getElementById("doneBtn");
+      const modal = document.getElementById("paymentModal");
+
+      if (!product) {
+        document.body.innerHTML = "<h2>No product selected!</h2>";
+        return;
+      }
+
+      // Display product
+      document.getElementById("productImage").src = product.image;
+      document.getElementById("productName").textContent = product.name;
+      document.getElementById("productPrice").textContent = "Price: ₹" + product.price;
+      updateTotal();
+
+      quantityInput.addEventListener("input", updateTotal);
+
+      function updateTotal() {
+        const quantity = parseInt(quantityInput.value);
+        totalAmount = product.price * quantity;
+        document.getElementById("totalPrice").textContent = "Total: ₹" + totalAmount.toLocaleString();
+      }
+
+      // 🟢 Proceed to Pay → Show modal
+      payNowBtn.addEventListener("click", () => {
+        const address = document.getElementById("address").value.trim();
+        if (address === "") {
+          alert("⚠️ Please enter your delivery address before proceeding!");
+          return;
+        }
+        modal.style.display = "flex"; // show popup
+      });
+
+      // 🚚 Cash on Delivery
+      codBtn.addEventListener("click", () => {
+        const address = document.getElementById("address").value.trim();
+        if (address === "") {
+          alert("⚠️ Please enter your delivery address before proceeding!");
+          return;
+        }
+
+        const shipping = 50;
+        const finalTotal = totalAmount + shipping;
+        document.getElementById("totalPrice").textContent =
+          "Total (Including ₹50 Shipping): ₹" + finalTotal.toLocaleString();
+
+        alert("🚚 Cash on Delivery Selected!\nTotal Payable: ₹" + finalTotal.toLocaleString());
+        doneBtn.classList.remove("hidden");
+      });
+
+      // ✅ Done → confirm order + go home
+      doneBtn.addEventListener("click", () => {
+        alert("✅ Order Confirmed!\nThank you for shopping with Algo’s Collection ❤️");
+        window.location.href = "index.html";
+      });
+    });
+
+    // Handle payment choice
+    function makePayment(method) {
+      document.getElementById("paymentModal").style.display = "none";
+      alert("Processing payment via " + method + " ... Please wait ⏳");
+      setTimeout(() => {
+        alert("✅ Payment Successful via " + method + "!\nThank you for shopping with Algo’s Collection ❤️");
+        window.location.href = "index.html";
+      }, 2000);
+    }
+
+    // Close popup when clicking outside
+    window.onclick = (event) => {
+      const modal = document.getElementById("paymentModal");
+      if (event.target === modal) modal.style.display = "none";
+    };
+
+
+    fetch("http://localhost:3000/cod-order", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: "Customer Name",
+    address: document.getElementById("address").value,
+    productName: product.name,
+    price: product.price,
+    quantity: quantity,
+    total: totalAmount + 50
+  })
+})
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert("✅ COD Order Confirmed! Mail sent successfully.");
+      window.location.href = "index.html";
+    } else {
+      alert("❌ Failed to send mail, but order saved.");
+    }
+  });
+
+
+
+
+
+
+
+  document.getElementById("codBtn").addEventListener("click", async () => {
+  const orderData = {
+    name: "Kayal Vizhi",
+    address: "Chennai, Tamil Nadu",
+    productName: "Dress",
+    price: 500,
+    quantity: 1,
+    total: 500
+  };
+
+  try {
+    const res = await fetch("http://localhost:3000/cod-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(orderData)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      alert("✅ COD Order Sent Successfully!");
+    } else {
+      alert("❌ Failed to send order.");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("⚠️ Error sending order!");
+  }
+});
+
+  </script>
+</body>
+</html>
